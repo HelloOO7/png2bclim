@@ -49,6 +49,7 @@ namespace png2bclim
                         makeBCLIM(path);
                         break;
                     case ".bclim":
+                    case ".bflim":
                     case ".bin":
                         makeBMP(path);
                         break;
@@ -60,9 +61,10 @@ namespace png2bclim
         public void makeBMP(string path)
         {
             BCLIM.CLIM bclim = BCLIM.analyze(path);
+            SaveAsBFLIM.Checked = bclim.Magic == 0x4D494C46;
             GB_Details.Visible = true;
             L_Details.Text = String.Format("{1}{0}{2}{0}{3}{0}{4}{0}{5}", Environment.NewLine,
-                bclim.FileFormat, bclim.Width, bclim.Height, bclim.TileWidth, bclim.TileHeight);
+                bclim.FileFormat, bclim.Width, bclim.Height, 4, 4);
 
             var img = BCLIM.makeBMP(path, CHK_AutoSavePNG.Checked, !CHK_NoCrop.Checked);
             if (img == null) return;
@@ -71,29 +73,39 @@ namespace png2bclim
         }
         public void makeBCLIM(string path)
         {
-            byte[] data = BCLIM.getBCLIM(path, CB_OutFormat.Text[0]);
-
             string fp = Path.GetFileNameWithoutExtension(path);
             fp = "new_" + fp.Substring(fp.IndexOf('_') + 1);
             string pp = Path.GetDirectoryName(path);
-            string newPath = Path.Combine(pp, fp + ".bclim");
 
             var sfd = new SaveFileDialog
             {
-                FileName = newPath,
+                FileName = fp + (SaveAsBFLIM.Checked ? ".bflim" : ".bclim"),
                 InitialDirectory = pp,
                 Filter = "BCLIM File|*.bclim" +
+                         "|BFLIM FILE|*.bflim" +
                          "|All Files|*.*"
             };
+
+            sfd.FilterIndex = SaveAsBFLIM.Checked ? 2 : 1;
+
             if (CHK_AutoSaveBCLIM.Checked || (sfd.ShowDialog() == DialogResult.OK))
+            {
+                bool FLIM = false;
+                if (sfd.FileName.EndsWith(".bflim"))
+                {
+                    FLIM = true;
+                }
+                byte[] data = BCLIM.getBCLIM(path, CB_OutFormat.Text[0], FLIM);
+
                 File.WriteAllBytes(sfd.FileName, data);
 
-            PB_BCLIM.Image = new Bitmap(path);
-            var bclim = BCLIM.analyze(sfd.FileName);
-            showPaletteBox(bclim);
-            GB_Details.Visible = true;
-            L_Details.Text = String.Format("{1}{0}{2}{0}{3}{0}{4}{0}{5}", Environment.NewLine,
-                bclim.FileFormat, bclim.Width, bclim.Height, bclim.TileWidth, bclim.TileHeight);
+                PB_BCLIM.Image = new Bitmap(path);
+                var bclim = BCLIM.analyze(sfd.FileName);
+                showPaletteBox(bclim);
+                GB_Details.Visible = true;
+                L_Details.Text = String.Format("{1}{0}{2}{0}{3}{0}{4}{0}{5}", Environment.NewLine,
+                    bclim.FileFormat, bclim.Width, bclim.Height, 4, 4);
+            }
         }
         public void showPaletteBox(BCLIM.CLIM bclim)
         {

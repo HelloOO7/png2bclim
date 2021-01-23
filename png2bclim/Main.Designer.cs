@@ -32,6 +32,7 @@
             this.TB_Path = new System.Windows.Forms.TextBox();
             this.PB_BCLIM = new System.Windows.Forms.PictureBox();
             this.GB_BCLIMOptions = new System.Windows.Forms.GroupBox();
+            this.SaveAsBFLIM = new System.Windows.Forms.CheckBox();
             this.CHK_AutoSaveBCLIM = new System.Windows.Forms.CheckBox();
             this.L_SQREC = new System.Windows.Forms.Label();
             this.CB_Shape = new System.Windows.Forms.ComboBox();
@@ -84,16 +85,27 @@
             // 
             // GB_BCLIMOptions
             // 
+            this.GB_BCLIMOptions.Controls.Add(this.SaveAsBFLIM);
             this.GB_BCLIMOptions.Controls.Add(this.CHK_AutoSaveBCLIM);
             this.GB_BCLIMOptions.Controls.Add(this.L_SQREC);
             this.GB_BCLIMOptions.Controls.Add(this.CB_Shape);
             this.GB_BCLIMOptions.Controls.Add(this.CB_OutFormat);
             this.GB_BCLIMOptions.Location = new System.Drawing.Point(12, 42);
             this.GB_BCLIMOptions.Name = "GB_BCLIMOptions";
-            this.GB_BCLIMOptions.Size = new System.Drawing.Size(135, 114);
+            this.GB_BCLIMOptions.Size = new System.Drawing.Size(135, 137);
             this.GB_BCLIMOptions.TabIndex = 10;
             this.GB_BCLIMOptions.TabStop = false;
             this.GB_BCLIMOptions.Text = "BCLIM Output Format";
+            // 
+            // SaveAsBFLIM
+            // 
+            this.SaveAsBFLIM.AutoSize = true;
+            this.SaveAsBFLIM.Location = new System.Drawing.Point(13, 114);
+            this.SaveAsBFLIM.Name = "SaveAsBFLIM";
+            this.SaveAsBFLIM.Size = new System.Drawing.Size(72, 17);
+            this.SaveAsBFLIM.TabIndex = 4;
+            this.SaveAsBFLIM.Text = "As BFLIM";
+            this.SaveAsBFLIM.UseVisualStyleBackColor = true;
             // 
             // CHK_AutoSaveBCLIM
             // 
@@ -155,7 +167,7 @@
             // 
             this.GB_PNGOptions.Controls.Add(this.CHK_NoCrop);
             this.GB_PNGOptions.Controls.Add(this.CHK_AutoSavePNG);
-            this.GB_PNGOptions.Location = new System.Drawing.Point(12, 162);
+            this.GB_PNGOptions.Location = new System.Drawing.Point(12, 185);
             this.GB_PNGOptions.Name = "GB_PNGOptions";
             this.GB_PNGOptions.Size = new System.Drawing.Size(135, 65);
             this.GB_PNGOptions.TabIndex = 11;
@@ -197,7 +209,7 @@
             // 
             this.GB_Details.Controls.Add(this.L_Meta);
             this.GB_Details.Controls.Add(this.L_Details);
-            this.GB_Details.Location = new System.Drawing.Point(12, 233);
+            this.GB_Details.Location = new System.Drawing.Point(12, 256);
             this.GB_Details.Name = "GB_Details";
             this.GB_Details.Size = new System.Drawing.Size(135, 86);
             this.GB_Details.TabIndex = 29;
@@ -230,7 +242,7 @@
             this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(369, 327);
+            this.ClientSize = new System.Drawing.Size(369, 349);
             this.Controls.Add(this.GB_Details);
             this.Controls.Add(this.PaletteBox);
             this.Controls.Add(this.GB_PNGOptions);
@@ -273,6 +285,7 @@
         private System.Windows.Forms.Label L_Details;
         private System.Windows.Forms.CheckBox CHK_AutoSaveBCLIM;
         private System.Windows.Forms.Label L_Meta;
+        private System.Windows.Forms.CheckBox SaveAsBFLIM;
     }
 }
 

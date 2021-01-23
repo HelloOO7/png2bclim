@@ -23,18 +23,18 @@ namespace CTR
 {
     public class BCLIM
     {
-        internal static void openFile(string path, bool autosave = false, bool crop = true, char format = 'X')
+        internal static void openFile(string path, bool autosave = false, bool crop = true, char format = 'X', bool IsBFLIM = false)
         {
             // Handle file
             if (!File.Exists(path)) throw new Exception("Can only accept files, not folders");
             string ext = Path.GetExtension(path);
             if (ext == ".png")
-                makeBCLIM(path, format);
+                makeBCLIM(path, format, IsBFLIM);
             else if (ext == ".bin" || ext == ".bclim")
                 makeBMP(path, autosave, crop);
         }
 
-        internal static byte[] IMGToBCLIM(Image img, char fc)
+        internal static byte[] IMGToBCLIM(Image img, char fc, bool IsBFLIM)
         {
             Bitmap mBitmap = new Bitmap(img);
             MemoryStream ms = new MemoryStream();
@@ -60,33 +60,34 @@ namespace CTR
             // Write the CLIM + imag data.
             using (BinaryWriter bw = new BinaryWriter(ms))
             {
-                bw.Write((uint)0x4D494C43); // CLIM
+                bw.Write(IsBFLIM ? (uint)0x4D494C46 : (uint)0x4D494C43); // FLIM/CLIM
                 bw.Write((ushort)0xFEFF);   // BOM
-                bw.Write((uint)0x14);
-                bw.Write((ushort)0x0202);   // 2 2 
+                bw.Write((ushort)0x14);
+                bw.Write(IsBFLIM ? (uint)0x07020100 : (uint)0x02020000);   // 7.2.1.0 for BFLIM, 2.2.0.0 for BCLIM 
                 bw.Write((uint)(datalength + 0x28));
                 bw.Write((uint)1);
                 bw.Write((uint)0x67616D69);
                 bw.Write((uint)0x10);
                 bw.Write((ushort)mBitmap.Width);
                 bw.Write((ushort)mBitmap.Height);
-                bw.Write((uint)bclimformat);
+                bw.Write((ushort)0x80); //alignment
+                bw.Write((ushort)bclimformat);
                 bw.Write((uint)datalength);
             }
             return ms.ToArray();
         }
-        internal static byte[] getBCLIM(string path, char fc)
+        internal static byte[] getBCLIM(string path, char fc, bool IsBFLIM)
         {
             byte[] byteArray = File.ReadAllBytes(path);
             using (Stream BitmapStream = new MemoryStream(byteArray)) // Open the file, even if it is in use.
             {
                 Image img = Image.FromStream(BitmapStream);
-                return IMGToBCLIM(img, fc);
+                return IMGToBCLIM(img, fc, IsBFLIM);
             }
         }
-        internal static Image makeBCLIM(string path, char fc)
+        internal static Image makeBCLIM(string path, char fc, bool IsBFLIM)
         {
-            byte[] bclim = getBCLIM(path, fc);
+            byte[] bclim = getBCLIM(path, fc, IsBFLIM);
             string fp = Path.GetFileNameWithoutExtension(path);
             fp = "new_" + fp.Substring(fp.IndexOf('_') + 1);
             string pp = Path.GetDirectoryName(path);
@@ -98,7 +99,7 @@ namespace CTR
         internal static Image makeBMP(string path, bool autosave = false, bool crop = true)
         {
             CLIM bclim = analyze(path);
-            if (bclim.Magic != 0x4D494C43)
+            if (bclim.Magic != 0x4D494C43 && bclim.Magic != 0x4D494C46)
             {
                 System.Media.SystemSounds.Beep.Play(); 
                 return null;
@@ -826,9 +827,8 @@ namespace CTR
                 bclim.Magic = br.ReadUInt32();
 
                 bclim.BOM = br.ReadUInt16();
-                bclim.CLIMLength = br.ReadUInt32();
-                bclim.TileWidth = 2 << br.ReadByte();
-                bclim.TileHeight = 2 << br.ReadByte();
+                bclim.CLIMLength = br.ReadUInt16();
+                bclim.Align = br.ReadUInt16();
                 bclim.totalLength = br.ReadUInt32();
                 bclim.Count = br.ReadUInt32();
 
@@ -836,7 +836,9 @@ namespace CTR
                 bclim.imagLength = br.ReadUInt32();
                 bclim.Width = br.ReadUInt16();
                 bclim.Height = br.ReadUInt16();
-                bclim.FileFormat = br.ReadInt32();
+                bclim.Align = br.ReadUInt16();
+                bclim.FileFormat = br.ReadByte();
+                bclim.SwizzleFormat = br.ReadByte();
                 bclim.dataLength = br.ReadUInt32();
 
                 bclim.BaseSize = Math.Max(nlpo2(bclim.Width), nlpo2(bclim.Height));
@@ -862,9 +864,8 @@ namespace CTR
                 bclim.Magic = br.ReadUInt32();
 
                 bclim.BOM = br.ReadUInt16();
-                bclim.CLIMLength = br.ReadUInt32();
-                bclim.TileWidth = 2 << br.ReadByte();
-                bclim.TileHeight = 2 << br.ReadByte();
+                bclim.CLIMLength = br.ReadUInt16();
+                bclim.Version = br.ReadUInt32();
                 bclim.totalLength = br.ReadUInt32();
                 bclim.Count = br.ReadUInt32();
 
@@ -872,7 +873,9 @@ namespace CTR
                 bclim.imagLength = br.ReadUInt32();
                 bclim.Width = br.ReadUInt16();
                 bclim.Height = br.ReadUInt16();
-                bclim.FileFormat = br.ReadInt32();
+                bclim.Align = br.ReadUInt16();
+                bclim.FileFormat = br.ReadByte();
+                bclim.SwizzleFormat = br.ReadByte();
                 bclim.dataLength = br.ReadUInt32();
 
                 bclim.BaseSize = Math.Max(nlpo2(bclim.Width), nlpo2(bclim.Height));
@@ -885,11 +888,10 @@ namespace CTR
         }
         public struct CLIM
         {
-            public UInt32 Magic;        // CLIM = 0x4D494C43
+            public UInt32 Magic;        // CLIM = 0x4D494C43, FLIM = 0x4D494C46
             public UInt16 BOM;          // 0xFFFE
-            public UInt32 CLIMLength;   // HeaderLength - 14
-            public int TileWidth;       // 1<<[[n]]
-            public int TileHeight;      // 1<<[[n]]
+            public UInt16 CLIMLength;   // HeaderLength - 14
+            public UInt32 Version;       //
             public UInt32 totalLength;  // Total Length of file
             public UInt32 Count;        // "1" , guessing it's just Count.
 
@@ -897,7 +899,9 @@ namespace CTR
             public UInt32 imagLength;   // HeaderLength - 10
             public UInt16 Width;        // Final Dimensions
             public UInt16 Height;       // Final Dimensions
-            public Int32 FileFormat;    // ??
+            public UInt16 Align;
+            public byte FileFormat;    // ??
+            public byte SwizzleFormat;    // ??
             public UInt32 dataLength;   // Pixel Data Region Length
 
             public byte[] Data;
