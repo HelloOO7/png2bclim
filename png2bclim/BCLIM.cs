@@ -70,8 +70,15 @@ namespace CTR
                 bw.Write((uint)0x10);
                 bw.Write((ushort)mBitmap.Width);
                 bw.Write((ushort)mBitmap.Height);
-                bw.Write((ushort)0x80); //alignment
-                bw.Write((ushort)bclimformat);
+                if (IsBFLIM)
+                {
+                    bw.Write((ushort)0x80); //alignment
+                    bw.Write((ushort)bclimformat);
+                }
+                else
+                {
+                    bw.Write((uint)bclimformat);
+                }
                 bw.Write((uint)datalength);
             }
             return ms.ToArray();
@@ -836,9 +843,16 @@ namespace CTR
                 bclim.imagLength = br.ReadUInt32();
                 bclim.Width = br.ReadUInt16();
                 bclim.Height = br.ReadUInt16();
-                bclim.Align = br.ReadUInt16();
-                bclim.FileFormat = br.ReadByte();
-                bclim.SwizzleFormat = br.ReadByte();
+                if (bclim.Magic == 0x4D494C46)
+                {
+                    bclim.Align = br.ReadUInt16();
+                    bclim.FileFormat = br.ReadByte();
+                    bclim.SwizzleFormat = br.ReadByte();
+                }
+                else
+                {
+                    bclim.FileFormat = br.ReadInt32();
+                }
                 bclim.dataLength = br.ReadUInt32();
 
                 bclim.BaseSize = Math.Max(nlpo2(bclim.Width), nlpo2(bclim.Height));
@@ -873,9 +887,16 @@ namespace CTR
                 bclim.imagLength = br.ReadUInt32();
                 bclim.Width = br.ReadUInt16();
                 bclim.Height = br.ReadUInt16();
-                bclim.Align = br.ReadUInt16();
-                bclim.FileFormat = br.ReadByte();
-                bclim.SwizzleFormat = br.ReadByte();
+                if (bclim.Magic == 0x4D494C46)
+                {
+                    bclim.Align = br.ReadUInt16();
+                    bclim.FileFormat = br.ReadByte();
+                    bclim.SwizzleFormat = br.ReadByte();
+                }
+                else
+                {
+                    bclim.FileFormat = br.ReadInt32();
+                }
                 bclim.dataLength = br.ReadUInt32();
 
                 bclim.BaseSize = Math.Max(nlpo2(bclim.Width), nlpo2(bclim.Height));
@@ -900,7 +921,7 @@ namespace CTR
             public UInt16 Width;        // Final Dimensions
             public UInt16 Height;       // Final Dimensions
             public UInt16 Align;
-            public byte FileFormat;    // ??
+            public int FileFormat;    // ??
             public byte SwizzleFormat;    // ??
             public UInt32 dataLength;   // Pixel Data Region Length
 

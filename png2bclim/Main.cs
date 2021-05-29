@@ -51,6 +51,7 @@ namespace png2bclim
                     case ".bclim":
                     case ".bflim":
                     case ".bin":
+                    default:
                         makeBMP(path);
                         break;
                 }
